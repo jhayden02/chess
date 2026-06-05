@@ -11,7 +11,7 @@ D_SRC := src
 
 STD := -std=c99
 WARNINGS := -Wall -Wextra -Werror -Wshadow -Wnon-virtual-dtor -Wold-style-cast
-INCLUDES := -Iinclude
+INCLUDES := -Isrc
 SOURCES := $(wildcard $(D_SRC)/*.c)
 EXE_NAME := main
 

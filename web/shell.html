@@ -6,7 +6,7 @@
         
         <title>Blink's Think's</title>
         
-        <meta name="title" content="Blink's Thinks">
+        <meta name="title" content="chess">
         <meta name="description" content="A self-hosting point-and-click puzzle game.">
         <meta name="keywords" content="raylib, programming, puzzle, C, C++, games, videogames">
         <meta name="viewport" content="width=device-width">
@@ -41,6 +41,19 @@
                 transform: translateY(-15vh);
                 image-rendering: pixelated;
                 image-rendering: crisp-edges;
+            }
+            footer {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+                text-align: center;
+                padding: 6px;
+                background-color: rgba(0, 0, 0, 0.5);
+                color: #999;
+                font-size: 12px;
+            }
+            footer p {
+                margin: 0;
             }
         </style>
         
@@ -100,5 +113,9 @@
             };
         </script>
         {{{ SCRIPT }}}
+
+        <footer>
+            <p>&copy; 2026 Josh Hayden (@jhayden02). Licensed under GPL-3.0.</p>
+        </footer>
     </body>
 </html>
