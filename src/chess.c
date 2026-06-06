@@ -18,6 +18,8 @@
 *
 ***********************************************************************************************/
 
+#include <stddef.h>
+
 #include "raylib.h"
 
 #define GAME_HEIGHT 852
@@ -64,24 +66,6 @@ Rectangle get_board_rec(int row, int col)
     int x = (col * BOARD_SQUARE_SIZE) + BOARD_X_OFFSET;
     int y = GAME_HEIGHT - (row * BOARD_SQUARE_SIZE) - BOARD_Y_OFFSET;
     return (Rectangle){x, y, BOARD_SQUARE_SIZE, BOARD_SQUARE_SIZE};
-}
-
-bool recs_equal(Rectangle *a, Rectangle *b)
-{
-    return a->x == b->x && a->y == b->y && a->width == b->width && a->height == b->height;
-}
-
-bool is_square_selected(Rectangle *square)
-{
-    return square->x != -1 && square->y != -1 && square->width != -1 && square->height != -1;
-}
-
-void deselect_square(Rectangle *square)
-{
-    square->x = -1;
-    square->y = -1;
-    square->width = -1;
-    square->height = -1;
 }
 
 void init_board(square_type board[BOARD_ROWS][BOARD_COLS])
@@ -151,17 +135,17 @@ void draw_pieces(square_type board[][BOARD_COLS], Texture2D *t_pieces)
     } 
 }
 
-void draw_overlays(Rectangle *selected_square)
+void draw_overlays(square_type **selected_square)
 {
-    if (!is_square_selected(selected_square)) {
+    if (*selected_square == NULL) {
         return;
     }
     // Draw white square on selected square.
-    DrawRectangleRec(*selected_square, SELECTION_WHITE);
-    DrawRectangleLinesEx(*selected_square, 4, WHITE);
+    DrawRectangleRec((*selected_square)->rec, SELECTION_WHITE);
+    DrawRectangleLinesEx((*selected_square)->rec, 4, WHITE);
 }
 
-void update_board(square_type board[][BOARD_COLS], Rectangle *selected_square)
+void update_board(square_type board[][BOARD_COLS], square_type **selected_square)
 {
     Vector2 mouse_pos = GetMousePosition();
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
@@ -170,10 +154,10 @@ void update_board(square_type board[][BOARD_COLS], Rectangle *selected_square)
             if (CheckCollisionPointRec(mouse_pos, board[row][col].rec)) {
                 // Deselect the currently selected square if you press on a square with no
                 // piece or on the same square that is already selected.
-                if (board[row][col].piece == NO_PIECE || recs_equal(selected_square, &board[row][col].rec)) {
-                    deselect_square(selected_square); 
+                if (board[row][col].piece == NO_PIECE || *selected_square == &board[row][col]) {
+                    *selected_square = NULL; 
                 } else {
-                    *selected_square = board[row][col].rec;
+                    *selected_square = &board[row][col];
                 }
             }
         }
@@ -186,7 +170,7 @@ int main(void)
     square_type board[BOARD_ROWS][BOARD_COLS];
     init_board(board);
 
-    Rectangle selected_square = {-1, -1, -1, -1};
+    square_type *selected_square = NULL;
 
     InitWindow(GAME_WIDTH, GAME_HEIGHT, "Chess");
     // Load all textures. Must be after OpenGL context is initialized (InitWindow).
