@@ -38,31 +38,28 @@
 #define SELECTION_WHITE (Color){255, 255, 255, 50}
 
 typedef enum {
-    SQUARE_EMPTY,
-    SQUARE_WHITE_PAWN,
-    SQUARE_WHITE_KNIGHT,
-    SQUARE_WHITE_BISHOP,
-    SQUARE_WHITE_ROOK,
-    SQUARE_WHITE_QUEEN,
-    SQUARE_WHITE_KING,
-    SQUARE_BLACK_PAWN,
-    SQUARE_BLACK_KNIGHT,
-    SQUARE_BLACK_BISHOP,
-    SQUARE_BLACK_ROOK,
-    SQUARE_BLACK_QUEEN,
-    SQUARE_BLACK_KING
-} square;
+    NO_PIECE,
+    PIECE_WHITE_PAWN,
+    PIECE_WHITE_KNIGHT,
+    PIECE_WHITE_BISHOP,
+    PIECE_WHITE_ROOK,
+    PIECE_WHITE_QUEEN,
+    PIECE_WHITE_KING,
+    PIECE_BLACK_PAWN,
+    PIECE_BLACK_KNIGHT,
+    PIECE_BLACK_BISHOP,
+    PIECE_BLACK_ROOK,
+    PIECE_BLACK_QUEEN,
+    PIECE_BLACK_KING
+} piece_type;
 
-// Returns the position of a square given its column and row.
-Vector2 pos_from_coords(int row, int col)
-{
-    int x = (col * BOARD_SQUARE_SIZE) + BOARD_X_OFFSET;
-    int y = GAME_HEIGHT - (row * BOARD_SQUARE_SIZE) - BOARD_Y_OFFSET;
-    return (Vector2){x, y};
-}
+typedef struct {
+    piece_type piece;
+    Rectangle rec;
+} square_type;
 
 // Returns a rectangle of a square given its column and row.
-Rectangle square_from_coords(int row, int col)
+Rectangle get_board_rec(int row, int col)
 {
     int x = (col * BOARD_SQUARE_SIZE) + BOARD_X_OFFSET;
     int y = GAME_HEIGHT - (row * BOARD_SQUARE_SIZE) - BOARD_Y_OFFSET;
@@ -87,64 +84,74 @@ void deselect_square(Rectangle *square)
     square->height = -1;
 }
 
-void init_board(square board[BOARD_ROWS][BOARD_COLS])
+void init_board(square_type board[BOARD_ROWS][BOARD_COLS])
 {
     // Initialize every square first to be empty.
     for (int col = 0; col < BOARD_COLS; col++) {
         for (int row = 0; row < BOARD_ROWS; row++) {
-           board[row][col] = SQUARE_EMPTY;
+           board[row][col].piece = NO_PIECE;
+           board[row][col].rec = get_board_rec(row, col);
         } 
     }
-
+    
+    // Initialize all the starting piece positions.
     for (int col = 0; col < BOARD_COLS; col++) {
-        board[1][col] = SQUARE_WHITE_PAWN;
-        board[6][col] = SQUARE_BLACK_PAWN;
+        board[1][col].piece = PIECE_WHITE_PAWN;
+        board[6][col].piece = PIECE_BLACK_PAWN;
     }
     
-    board[0][0] = SQUARE_WHITE_ROOK;
-    board[0][7] = SQUARE_WHITE_ROOK;
+    board[0][0].piece = PIECE_WHITE_ROOK;
+    board[0][7].piece = PIECE_WHITE_ROOK;
 
-    board[7][0] = SQUARE_BLACK_ROOK;
-    board[7][7] = SQUARE_BLACK_ROOK;
+    board[7][0].piece = PIECE_BLACK_ROOK;
+    board[7][7].piece = PIECE_BLACK_ROOK;
 
-    board[0][1] = SQUARE_WHITE_KNIGHT;
-    board[0][6] = SQUARE_WHITE_KNIGHT;
+    board[0][1].piece = PIECE_WHITE_KNIGHT;
+    board[0][6].piece = PIECE_WHITE_KNIGHT;
     
-    board[7][1] = SQUARE_BLACK_KNIGHT;
-    board[7][6] = SQUARE_BLACK_KNIGHT;
+    board[7][1].piece = PIECE_BLACK_KNIGHT;
+    board[7][6].piece = PIECE_BLACK_KNIGHT;
     
-    board[0][2] = SQUARE_WHITE_BISHOP;
-    board[0][5] = SQUARE_WHITE_BISHOP;
+    board[0][2].piece = PIECE_WHITE_BISHOP;
+    board[0][5].piece = PIECE_WHITE_BISHOP;
     
-    board[7][2] = SQUARE_BLACK_BISHOP;
-    board[7][5] = SQUARE_BLACK_BISHOP;
+    board[7][2].piece = PIECE_BLACK_BISHOP;
+    board[7][5].piece = PIECE_BLACK_BISHOP;
 
-    board[0][3] = SQUARE_WHITE_QUEEN;
-    board[0][4] = SQUARE_WHITE_KING;
+    board[0][3].piece = PIECE_WHITE_QUEEN;
+    board[0][4].piece = PIECE_WHITE_KING;
     
-    board[7][3] = SQUARE_BLACK_QUEEN;
-    board[7][4] = SQUARE_BLACK_KING;
+    board[7][3].piece = PIECE_BLACK_QUEEN;
+    board[7][4].piece = PIECE_BLACK_KING;
 }
 
-void draw_pieces(square board[][BOARD_COLS], Texture2D *t_pieces)
+void draw_pieces(square_type board[][BOARD_COLS], Texture2D *t_pieces)
 {
     for (int row = 0; row < BOARD_ROWS; row++) {
     for (int col = 0; col < BOARD_COLS; col++) {
-        const square current_square = board[row][col];
-        const Rectangle piece_rec = {
-            current_square * BOARD_SQUARE_SIZE,
+        const Rectangle piece_texture_rec = {
+            board[row][col].piece * BOARD_SQUARE_SIZE,
             0.0f,
             BOARD_SQUARE_SIZE,
             BOARD_SQUARE_SIZE
         };
-        Vector2 position = pos_from_coords(row, col);
-        position.y -= PIECE_Y_OFFSET;
-        DrawTextureRec(*t_pieces, piece_rec, position, WHITE);
+
+        Vector2 position = {
+            board[row][col].rec.x,
+            board[row][col].rec.y - PIECE_Y_OFFSET
+        };
+
+        DrawTextureRec(
+            *t_pieces,
+            piece_texture_rec,
+            position,
+            WHITE
+        );
     }
     } 
 }
 
-void draw_overlays(square board[][BOARD_COLS], Rectangle *selected_square)
+void draw_overlays(Rectangle *selected_square)
 {
     if (!is_square_selected(selected_square)) {
         return;
@@ -154,18 +161,19 @@ void draw_overlays(square board[][BOARD_COLS], Rectangle *selected_square)
     DrawRectangleLinesEx(*selected_square, 4, WHITE);
 }
 
-void update_board(square board[][BOARD_COLS], Rectangle *selected_square)
+void update_board(square_type board[][BOARD_COLS], Rectangle *selected_square)
 {
     Vector2 mouse_pos = GetMousePosition();
     if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         for (int row = 0; row < BOARD_ROWS; row++) {
         for (int col = 0; col < BOARD_COLS; col++) {
-            Rectangle square = square_from_coords(row, col); 
-            if (CheckCollisionPointRec(mouse_pos, square)) {
-                if (board[row][col] == SQUARE_EMPTY || recs_equal(selected_square, &square)) {
+            if (CheckCollisionPointRec(mouse_pos, board[row][col].rec)) {
+                // Deselect the currently selected square if you press on a square with no
+                // piece or on the same square that is already selected.
+                if (board[row][col].piece == NO_PIECE || recs_equal(selected_square, &board[row][col].rec)) {
                     deselect_square(selected_square); 
                 } else {
-                    *selected_square = square;
+                    *selected_square = board[row][col].rec;
                 }
             }
         }
@@ -175,7 +183,7 @@ void update_board(square board[][BOARD_COLS], Rectangle *selected_square)
 
 int main(void)
 { 
-    square board[BOARD_ROWS][BOARD_COLS];
+    square_type board[BOARD_ROWS][BOARD_COLS];
     init_board(board);
 
     Rectangle selected_square = {-1, -1, -1, -1};
