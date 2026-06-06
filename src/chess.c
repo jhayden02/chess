@@ -154,27 +154,28 @@ void update_board(square_type board[][BOARD_COLS], square_type **selected_square
     Vector2 mouse_pos = GetMousePosition();
     for (int row = 0; row < BOARD_ROWS; row++) {
     for (int col = 0; col < BOARD_COLS; col++) {
-        if (!CheckCollisionPointRec(mouse_pos, board[row][col].rec)) {
+        square_type *clicked_square = &board[row][col];
+        if (!CheckCollisionPointRec(mouse_pos, clicked_square->rec)) {
             continue;
         }
         // No piece currently selected.
         if (*selected_square == NULL) {
-            if (board[row][col].piece != NO_PIECE) {
-                *selected_square = &board[row][col];
+            if (clicked_square->piece != NO_PIECE) {
+                *selected_square = clicked_square;
             }
             return;
         }
 
         // The same piece is selected again. Deselect.
-        if (*selected_square == &board[row][col]) {
+        if (*selected_square == clicked_square) {
             *selected_square = NULL;
-        } else if (board[row][col].piece != NO_PIECE) {
-            *selected_square = NULL;    
-        } else {
-            board[row][col].piece = (*selected_square)->piece;
-            (*selected_square)->piece = NO_PIECE;
-            *selected_square = NULL;
+            return;
         }
+        
+        // A valid square was clicked. Move the selected piece there.
+        clicked_square->piece = (*selected_square)->piece;
+        (*selected_square)->piece = NO_PIECE;
+        *selected_square = NULL;
     }
     }
 }
