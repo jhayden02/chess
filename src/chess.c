@@ -35,6 +35,8 @@
 // Centers the piece inside the square instead of sitting at the bottom.
 #define PIECE_Y_OFFSET 6
 
+#define SELECTION_WHITE (Color){255, 255, 255, 50}
+
 typedef enum {
     SQUARE_EMPTY,
     SQUARE_WHITE_PAWN,
@@ -129,7 +131,8 @@ void draw_board(square board[][BOARD_COLS], Texture2D *t_board, Texture2D *t_pie
     }
 
     if (selected_square->x != -1 && selected_square->y != -1) {
-        DrawRectangleLinesEx(*selected_square, 4, GREEN);
+        DrawRectangleRec(*selected_square, SELECTION_WHITE);
+        DrawRectangleLinesEx(*selected_square, 4, WHITE);
     }
 }
 
