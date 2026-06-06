@@ -147,22 +147,36 @@ void draw_overlays(square_type **selected_square)
 
 void update_board(square_type board[][BOARD_COLS], square_type **selected_square)
 {
+    if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        return;
+    }
+
     Vector2 mouse_pos = GetMousePosition();
-    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        for (int row = 0; row < BOARD_ROWS; row++) {
-        for (int col = 0; col < BOARD_COLS; col++) {
-            if (CheckCollisionPointRec(mouse_pos, board[row][col].rec)) {
-                // Deselect the currently selected square if you press on a square with no
-                // piece or on the same square that is already selected.
-                if (board[row][col].piece == NO_PIECE || *selected_square == &board[row][col]) {
-                    *selected_square = NULL; 
-                } else {
-                    *selected_square = &board[row][col];
-                }
+    for (int row = 0; row < BOARD_ROWS; row++) {
+    for (int col = 0; col < BOARD_COLS; col++) {
+        if (!CheckCollisionPointRec(mouse_pos, board[row][col].rec)) {
+            continue;
+        }
+        // No piece currently selected.
+        if (*selected_square == NULL) {
+            if (board[row][col].piece != NO_PIECE) {
+                *selected_square = &board[row][col];
             }
+            return;
         }
+
+        // The same piece is selected again. Deselect.
+        if (*selected_square == &board[row][col]) {
+            *selected_square = NULL;
+        } else if (board[row][col].piece != NO_PIECE) {
+            *selected_square = NULL;    
+        } else {
+            board[row][col].piece = (*selected_square)->piece;
+            (*selected_square)->piece = NO_PIECE;
+            *selected_square = NULL;
         }
-    } 
+    }
+    }
 }
 
 int main(void)
