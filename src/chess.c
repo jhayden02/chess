@@ -4,11 +4,11 @@
 *
 *   Copyright (c) 2026 Josh Hayden (@jhayden02)
 *
-*   Blink's Thinks is free software: you can redistribute it and/or modify
+*   This is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License v3.0 as published
 *   by the Free Software Foundation.
 *  
-*   Blink's Thinks is distributed in the hope that it will be useful,
+*   This is distributed in the hope that it will be useful,
 *   but WITHOUT ANY WARRANTY; without even the implied warranty of
 *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *   GNU General Public License for more details.
@@ -27,8 +27,13 @@
 #define BOARD_ROWS 8
 #define BOARD_COLS BOARD_ROWS
 #define BOARD_SQUARE_SIZE 96
+
+// For non-square margins of the board.
 #define BOARD_X_OFFSET 42
-#define BOARD_Y_OFFSET (BOARD_SQUARE_SIZE + (BOARD_SQUARE_SIZE / 2))
+#define BOARD_Y_OFFSET (BOARD_SQUARE_SIZE + BOARD_X_OFFSET)
+
+// Centers the piece inside the square instead of sitting at the bottom.
+#define PIECE_Y_OFFSET 6
 
 typedef enum {
     SQUARE_EMPTY,
@@ -46,11 +51,35 @@ typedef enum {
     SQUARE_BLACK_KING
 } square;
 
-square board[BOARD_ROWS][BOARD_COLS];
-
-// White pieces are uppercase, black pieces are lowercase.
-void init_board()
+Vector2 pos_from_coords(int row, int col)
 {
+    int x = (col * BOARD_SQUARE_SIZE) + BOARD_X_OFFSET;
+    int y = GAME_HEIGHT - (row * BOARD_SQUARE_SIZE) - BOARD_Y_OFFSET;
+    return (Vector2){x, y};
+}
+
+// Returns a rectangle of a square given it's column and row.
+Rectangle rec_from_coords(int row, int col)
+{
+    int x = (col * BOARD_SQUARE_SIZE) + BOARD_X_OFFSET;
+    int y = GAME_HEIGHT - (row * BOARD_SQUARE_SIZE) - BOARD_Y_OFFSET;
+    return (Rectangle){x, y, BOARD_SQUARE_SIZE, BOARD_SQUARE_SIZE};
+}
+
+bool rec_equal(Rectangle a, Rectangle b)
+{
+    return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
+}
+
+void init_board(square board[BOARD_ROWS][BOARD_COLS])
+{
+    // Initialize every square first to be empty.
+    for (int col = 0; col < BOARD_COLS; col++) {
+        for (int row = 0; row < BOARD_ROWS; row++) {
+           board[row][col] = SQUARE_EMPTY;
+        } 
+    }
+
     for (int col = 0; col < BOARD_COLS; col++) {
         board[1][col] = SQUARE_WHITE_PAWN;
         board[6][col] = SQUARE_BLACK_PAWN;
@@ -81,14 +110,62 @@ void init_board()
     board[7][4] = SQUARE_BLACK_KING;
 }
 
+void draw_board(square board[][BOARD_COLS], Texture2D *t_board, Texture2D *t_pieces, Rectangle *selected_square)
+{
+    DrawTexture(*t_board, 0, 0, WHITE);
+    for (int row = 0; row < BOARD_ROWS; row++) {
+        for (int col = 0; col < BOARD_COLS; col++) {
+            const square current_square = board[row][col];
+            const Rectangle piece_rec = {
+                current_square * BOARD_SQUARE_SIZE,
+                0.0f,
+                BOARD_SQUARE_SIZE,
+                BOARD_SQUARE_SIZE
+            };
+            Vector2 position = pos_from_coords(row, col); 
+            position.y -= PIECE_Y_OFFSET;
+            DrawTextureRec(*t_pieces, piece_rec, position, WHITE);
+        }
+    }
+
+    if (selected_square->x != -1 && selected_square->y != -1) {
+        DrawRectangleLinesEx(*selected_square, 4, GREEN);
+    }
+}
+
+void update_board(Rectangle *selected_square)
+{
+    Vector2 mouse_pos = GetMousePosition(); 
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        for (int row = 0; row < BOARD_ROWS; row++) {
+        for (int col = 0; col < BOARD_COLS; col++) {
+            Rectangle rec = rec_from_coords(row, col); 
+            if (CheckCollisionPointRec(mouse_pos, rec)) {
+                if (rec_equal(*selected_square, rec)) {
+                    selected_square->x = -1;
+                    selected_square->y = -1;
+                } else {
+                    *selected_square = rec;
+                }
+            }
+        }
+        }
+    } 
+}
+
 int main(void)
 { 
-    InitWindow(GAME_WIDTH, GAME_HEIGHT, "Chess");
+    square board[BOARD_ROWS][BOARD_COLS];
+    init_board(board);
 
+    Rectangle selected_square = {-1, -1, BOARD_SQUARE_SIZE, BOARD_SQUARE_SIZE};
+
+    InitWindow(GAME_WIDTH, GAME_HEIGHT, "Chess");
+    // Load all textures. Must be after OpenGL context is initialized (InitWindow).
     Image i_chess_board = LoadImage("res/board.png");
     Image i_pieces = LoadImage("res/pieces.png");
 
-    Texture2D t_chess_board = LoadTextureFromImage(i_chess_board);
+    Texture2D t_board = LoadTextureFromImage(i_chess_board);
     Texture2D t_pieces = LoadTextureFromImage(i_pieces);
 
     UnloadImage(i_chess_board);
@@ -96,34 +173,20 @@ int main(void)
 
     SetTargetFPS(GAME_FPS);
 
-    init_board();
-
     while (!WindowShouldClose())
     {
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-        
-        // Draw board and pieces.
-        DrawTexture(t_chess_board, 0, 0, WHITE);
-        for (int row = 0; row < BOARD_ROWS; row++) {
-            for (int col = 0; col < BOARD_COLS; col++) {
-                const square current_square = board[row][col];
-                const Rectangle piece_rec = {
-                    current_square * BOARD_SQUARE_SIZE,
-                    0.0f,
-                    BOARD_SQUARE_SIZE,
-                    BOARD_SQUARE_SIZE
-                };
-                const Vector2 position = {
-                    (col * BOARD_SQUARE_SIZE) + BOARD_X_OFFSET,
-                    GAME_HEIGHT - (row * BOARD_SQUARE_SIZE) - BOARD_Y_OFFSET
-                };
-                DrawTextureRec(t_pieces, piece_rec, position, WHITE);
-            }
-        }
+        // Update step.
+        update_board(&selected_square);
 
+        // Draw step.
+        BeginDrawing();
+        ClearBackground(RAYWHITE); 
+        draw_board(board, &t_board, &t_pieces, &selected_square); 
         EndDrawing();
     }
+
+    UnloadTexture(t_board);
+    UnloadTexture(t_pieces);
 
     CloseWindow();
     return 0;
