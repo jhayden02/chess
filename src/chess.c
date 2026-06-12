@@ -98,30 +98,23 @@ void init_board(square_type board[BOARD_ROWS][BOARD_COLS])
         board[1][col].piece = PIECE_WHITE_PAWN;
         board[6][col].piece = PIECE_BLACK_PAWN;
     }
-    
-    board[0][0].piece = PIECE_WHITE_ROOK;
-    board[0][7].piece = PIECE_WHITE_ROOK;
 
-    board[7][0].piece = PIECE_BLACK_ROOK;
-    board[7][7].piece = PIECE_BLACK_ROOK;
+    piece_type back_rank[BOARD_COLS] = {
+        PIECE_WHITE_ROOK,
+        PIECE_WHITE_KNIGHT,
+        PIECE_WHITE_BISHOP,
+        PIECE_WHITE_QUEEN,
+        PIECE_WHITE_KING,
+        PIECE_WHITE_BISHOP,
+        PIECE_WHITE_KNIGHT,
+        PIECE_WHITE_ROOK
+    };
 
-    board[0][1].piece = PIECE_WHITE_KNIGHT;
-    board[0][6].piece = PIECE_WHITE_KNIGHT;
-    
-    board[7][1].piece = PIECE_BLACK_KNIGHT;
-    board[7][6].piece = PIECE_BLACK_KNIGHT;
-    
-    board[0][2].piece = PIECE_WHITE_BISHOP;
-    board[0][5].piece = PIECE_WHITE_BISHOP;
-    
-    board[7][2].piece = PIECE_BLACK_BISHOP;
-    board[7][5].piece = PIECE_BLACK_BISHOP;
-
-    board[0][3].piece = PIECE_WHITE_QUEEN;
-    board[0][4].piece = PIECE_WHITE_KING;
-    
-    board[7][3].piece = PIECE_BLACK_QUEEN;
-    board[7][4].piece = PIECE_BLACK_KING;
+    for (int col = 0; col < BOARD_COLS; col++) {
+        board[0][col].piece = back_rank[col];
+        // Black enums sit one full color-block past the white ones.
+        board[7][col].piece = back_rank[col] + (PIECE_BLACK_PAWN - PIECE_WHITE_PAWN);
+    }
 }
 
 void draw_pieces(square_type board[][BOARD_COLS], Texture2D *t_pieces)
