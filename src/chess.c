@@ -19,6 +19,7 @@
 ***********************************************************************************************/
 
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "raylib.h"
 
@@ -34,6 +35,9 @@
 #define BOARD_X_OFFSET 42
 #define BOARD_Y_OFFSET (BOARD_SQUARE_SIZE + BOARD_X_OFFSET)
 
+// The pixel locations of the board edges.
+#define BOARD_LEFT_X BOARD_X_OFFSET
+#define BOARD_BOTTOM_Y (GAME_HEIGHT - BOARD_Y_OFFSET + BOARD_SQUARE_SIZE)                                                                                                          
 // Centers the piece inside the square instead of sitting at the bottom.
 #define PIECE_Y_OFFSET 6
 
@@ -66,6 +70,17 @@ Rectangle get_board_rec(int row, int col)
     int x = (col * BOARD_SQUARE_SIZE) + BOARD_X_OFFSET;
     int y = GAME_HEIGHT - (row * BOARD_SQUARE_SIZE) - BOARD_Y_OFFSET;
     return (Rectangle){x, y, BOARD_SQUARE_SIZE, BOARD_SQUARE_SIZE};
+}
+
+// Returns the row number that a y coordinate exists in.
+int get_board_row(int y)
+{
+    return (BOARD_BOTTOM_Y - y) / BOARD_SQUARE_SIZE;
+}            
+
+// Returns the column number that an x coordinate exists in.
+int get_board_col(int x) {
+    return (x - BOARD_LEFT_X)  / BOARD_SQUARE_SIZE;
 }
 
 void init_board(square_type board[BOARD_ROWS][BOARD_COLS])
@@ -152,36 +167,34 @@ void update_board(square_type board[][BOARD_COLS], square_type **selected_square
     }
 
     Vector2 mouse_pos = GetMousePosition();
-    for (int row = 0; row < BOARD_ROWS; row++) {
-    for (int col = 0; col < BOARD_COLS; col++) {
-        square_type *clicked_square = &board[row][col];
-        if (!CheckCollisionPointRec(mouse_pos, clicked_square->rec)) {
-            continue;
+    int row = get_board_row((int)mouse_pos.y);
+    int col = get_board_col((int)mouse_pos.x);
+    square_type *clicked_square = &board[row][col];
+    
+    // No piece currently selected.
+    if (*selected_square == NULL) {
+        if (clicked_square->piece != NO_PIECE) {
+            *selected_square = clicked_square;
         }
-        // No piece currently selected.
-        if (*selected_square == NULL) {
-            if (clicked_square->piece != NO_PIECE) {
-                *selected_square = clicked_square;
-            }
-            return;
-        }
+        return;
+    }
 
-        // The same piece is selected again. Deselect.
-        if (*selected_square == clicked_square) {
-            *selected_square = NULL;
-            return;
-        }
-        
-        // A valid square was clicked. Move the selected piece there.
-        clicked_square->piece = (*selected_square)->piece;
-        (*selected_square)->piece = NO_PIECE;
+    // The same piece is selected again. Deselect.
+    if (*selected_square == clicked_square) {
         *selected_square = NULL;
+        return;
     }
-    }
+    
+    // A valid square was clicked. Move the selected piece there.
+    clicked_square->piece = (*selected_square)->piece;
+    (*selected_square)->piece = NO_PIECE;
+    *selected_square = NULL;
 }
 
 int main(void)
 { 
+    SetTraceLogLevel(LOG_DEBUG);
+
     square_type board[BOARD_ROWS][BOARD_COLS];
     init_board(board);
 
