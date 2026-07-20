@@ -83,6 +83,13 @@ int get_board_col(int x) {
     return (x - BOARD_LEFT_X)  / BOARD_SQUARE_SIZE;
 }
 
+bool is_valid_move(square_type *origin_square, square_type *destination_square)
+{
+    (void)origin_square;
+    (void)destination_square;
+    return true;
+}
+
 void init_board(square_type board[BOARD_ROWS][BOARD_COLS])
 {
     // Initialize every square first to be empty.
@@ -178,10 +185,12 @@ void update_board(square_type board[][BOARD_COLS], square_type **selected_square
         return;
     }
     
-    // A valid square was clicked. Move the selected piece there.
-    clicked_square->piece = (*selected_square)->piece;
-    (*selected_square)->piece = NO_PIECE;
-    *selected_square = NULL;
+    if (is_valid_move(*selected_square, clicked_square)) {
+        // A valid square was clicked. Move the selected piece there.
+        clicked_square->piece = (*selected_square)->piece;
+        (*selected_square)->piece = NO_PIECE;
+        *selected_square = NULL;
+    }
 }
 
 int main(void)
