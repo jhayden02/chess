@@ -64,6 +64,8 @@ typedef struct {
     Rectangle rec;
 } square_type;
 
+square_type board[BOARD_ROWS][BOARD_COLS];
+
 // Returns a rectangle of a square given its column and row.
 Rectangle get_board_rec(int row, int col)
 {
@@ -90,7 +92,7 @@ bool is_valid_move(square_type *origin_square, square_type *destination_square)
     return true;
 }
 
-void init_board(square_type board[BOARD_ROWS][BOARD_COLS])
+void init_board(void)
 {
     // Initialize every square first to be empty.
     for (int col = 0; col < BOARD_COLS; col++) {
@@ -124,7 +126,7 @@ void init_board(square_type board[BOARD_ROWS][BOARD_COLS])
     }
 }
 
-void draw_pieces(square_type board[][BOARD_COLS], Texture2D *t_pieces)
+void draw_pieces(Texture2D *t_pieces)
 {
     for (int row = 0; row < BOARD_ROWS; row++) {
     for (int col = 0; col < BOARD_COLS; col++) {
@@ -160,7 +162,7 @@ void draw_overlays(square_type **selected_square)
     DrawRectangleLinesEx((*selected_square)->rec, 4, WHITE);
 }
 
-void update_board(square_type board[][BOARD_COLS], square_type **selected_square)
+void update_board(square_type **selected_square)
 {
     if (!IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         return;
@@ -197,8 +199,7 @@ int main(void)
 { 
     SetTraceLogLevel(LOG_DEBUG);
 
-    square_type board[BOARD_ROWS][BOARD_COLS];
-    init_board(board);
+    init_board();
 
     square_type *selected_square = NULL;
 
@@ -211,14 +212,11 @@ int main(void)
     Texture2D t_pieces = LoadTextureFromImage(i_pieces);
 
     UnloadImage(i_chess_board);
-    UnloadImage(i_pieces);
-
-    SetTargetFPS(GAME_FPS);
-
+    UnloadImage(i_pieces); SetTargetFPS(GAME_FPS);
     while (!WindowShouldClose())
     {
         // Update step.
-        update_board(board, &selected_square);
+        update_board(&selected_square);
 
         // Draw step.
         BeginDrawing();
@@ -226,7 +224,7 @@ int main(void)
 
         // Draw the board.
         DrawTexture(t_board, 0, 0, WHITE);
-        draw_pieces(board, &t_pieces); 
+        draw_pieces(&t_pieces); 
         draw_overlays(&selected_square);
         EndDrawing();
     }
